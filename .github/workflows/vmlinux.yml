@@ -1,0 +1,95 @@
+name: 构建PERM00_Android12.1内核-支持KernelSU
+
+on:
+  workflow_dispatch:  # 手动触发
+  push:
+    tags:
+      - "v1.0.0"      # 推送标签时自动触发
+
+permissions:
+  contents: write     # Releases 需要
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: 构建编译内核环境
+      run: |
+        sudo apt-get update
+        sudo -E apt-get -y -qq install git make bc bison ccache openssl dos2unix zip kmod cpio flex libelf-dev curl libssl-dev libtfm-dev wget device-tree-compiler ca-certificates python3 binutils binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi
+        mkdir -p $GITHUB_WORKSPACE/kernel_workspace
+
+    - name: 下载 Gcc编译器
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace
+        mkdir gcc64
+        wget -O gcc-aarch64.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz
+        tar -C gcc64/ -zxvf gcc-aarch64.tar.gz
+        mkdir gcc32
+        wget -O gcc-arm.tar.gz https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/+archive/refs/tags/android-12.1.0_r27.tar.gz
+        tar -C gcc32/ -zxvf gcc-arm.tar.gz
+
+    - name: 下载Clang编译器
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace
+        mkdir clang-aosp
+        git clone -q --depth=1 https://github.com/crdroidandroid/android_prebuilts_clang_host_linux-x86_clang-6443078 -b 10.0 clang-aosp
+
+    - name: 下载内核源码
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace
+        git clone --depth=1 https://github.com/fangkuaixiaoqiao/android_kernel_oppo_mt6853 -b oppo/mt6853_s_12.1_k7x android-kernel
+        cd android-kernel/kernel-4.14
+
+    - name: 下载KernelSU源码
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel/kernel-4.14
+        curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s v0.9.5
+
+    - name: 设置ccache缓存
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: build-kernel-mido-kernel
+        max-size: 2G
+
+    - name: 开始编译vmlinux/Image/dtbs
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel/kernel-4.14
+        export PATH=$GITHUB_WORKSPACE/kernel_workspace/clang-aosp/bin:$GITHUB_WORKSPACE/kernel_workspace/gcc64/bin:$GITHUB_WORKSPACE/kernel_workspace/gcc32/bin:$PATH
+        export KBUILD_BUILD_HOST=gmail.com
+        export KBUILD_BUILD_USER=fangkuaixiaoqiao
+        make -s -j$(nproc --all) O=out ARCH=arm64 OPPO-K7x_defconfig
+        make -j$(nproc --all) CC="ccache clang" O=out ARCH=arm64 CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-android- CROSS_COMPILE_ARM32=arm-linux-androideabi- LD=ld.lld vmlinux Image dtbs
+
+    # ===== 1. 上传到 Artifacts（工作流页面下载）=====
+    - name: 上传 vmlinux/Image/dtbs 到 Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: kernel-output
+        path: |
+          kernel_workspace/android-kernel/kernel-4.14/out/*
+          kernel_workspace/android-kernel/kernel-4.14/out/arch/arm64/boot/*
+
+    # ===== 2. 打包并上传到 Releases（发布页面下载）=====
+    - name: 打包内核产物
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel/kernel-4.14/out
+        mkdir -p kernel_package
+        cp arch/arm64/boot/Image kernel_package/
+        cp arch/arm64/boot/dtbs/*.dtb kernel_package/ 2>/dev/null || true
+        cp vmlinux kernel_package/ 2>/dev/null || true
+        cd kernel_package
+        zip -r9 ../../../../../../kernel-Image-dtbs.zip .
+      continue-on-error: true
+
+    - name: 上传到 GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          ${{ github.workspace }}/kernel_workspace/android-kernel/kernel-4.14/out/../../../../kernel-Image-dtbs.zip
+        fail_on_unmatched_files: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

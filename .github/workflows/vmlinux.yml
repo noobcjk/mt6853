@@ -1,4 +1,4 @@
-name: 构建PERM00_Android12.1内核-支持KernelSU
+name: 构建PERM00_Android12.1 vmlinux dtbo Image
 
 on:
   workflow_dispatch:  # 手动触发

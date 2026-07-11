@@ -60,7 +60,7 @@ jobs:
         max-size: 2G
 
 
-    - name: 开始编译vmlinux
+    - name: 开始编译vmlinux/Image/dtbs
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel/kernel-4.14
         export PATH=$GITHUB_WORKSPACE/kernel_workspace/clang-aosp/bin:$GITHUB_WORKSPACE/kernel_workspace/gcc64/bin:$GITHUB_WORKSPACE/kernel_workspace/gcc32/bin:$PATH
@@ -68,10 +68,10 @@ jobs:
         export KBUILD_BUILD_USER=fangkuaixiaoqiao
         make -s -j$(nproc --all) O=out ARCH=arm64 OPPO-K7x_defconfig
         make -j$(nproc --all) CC="ccache clang" O=out ARCH=arm64 CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-android- CROSS_COMPILE_ARM32=arm-linux-androideabi- LD=ld.lld vmlinux Image dtbs
-    - name: 上传vmlinux与镜像
-  uses: actions/upload-artifact@v4
-  with:
-    name: kernel-output
-    path: |
-      kernel_workspace/android-kernel/kernel-4.14/out/vmlinux
-      kernel_workspace/android-kernel/kernel-4.14/out/arch/arm64/boot/*
+    - name: 上传vmlinux/Image/dtbs
+      uses: actions/upload-artifact@v4
+      with:
+        name: kernel-output
+        path: |
+          kernel_workspace/android-kernel/kernel-4.14/out/*
+          kernel_workspace/android-kernel/kernel-4.14/out/arch/arm64/boot/*

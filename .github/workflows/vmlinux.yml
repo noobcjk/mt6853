@@ -69,27 +69,10 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: kernel-output
-        path: |
+        path: | 
+          kernel_workspace/android-kernel/   kernel-4.14/out/vmlinux
+          kernel_workspace/android-kernel/kernel-4.14/out/arch/arm64/boot/Image
+          kernel_workspace/android-kernel/kernel-4.14/out/arch/arm64/boot/dtbo.img
+          kernel_workspace/android-kernel/  kernel-4.14/out/arch/arm64/boot/dtb/*
           kernel_workspace/android-kernel/kernel-4.14/out/*
           kernel_workspace/android-kernel/kernel-4.14/out/arch/arm64/boot/*
-
-    # ===== 2. 打包并上传到 Releases（发布页面下载）=====
-    - name: 打包内核产物
-      run: |
-        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel/kernel-4.14/out
-        mkdir -p kernel_package
-        cp arch/arm64/boot/Image kernel_package/
-        cp arch/arm64/boot/dtbs/*.dtb kernel_package/ 2>/dev/null || true
-        cp vmlinux kernel_package/ 2>/dev/null || true
-        cd kernel_package
-        zip -r9 ../../../../../../kernel-Image-dtbs.zip .
-      continue-on-error: true
-
-    - name: 上传到 GitHub Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: |
-          ${{ github.workspace }}/kernel_workspace/android-kernel/kernel-4.14/out/../../../../kernel-Image-dtbs.zip
-        fail_on_unmatched_files: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

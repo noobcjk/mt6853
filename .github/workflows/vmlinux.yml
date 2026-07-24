@@ -73,6 +73,3 @@ jobs:
           kernel_workspace/android-kernel/   kernel-4.14/out/vmlinux
           kernel_workspace/android-kernel/kernel-4.14/out/arch/arm64/boot/Image
           kernel_workspace/android-kernel/kernel-4.14/out/arch/arm64/boot/dtbo.img
-          kernel_workspace/android-kernel/  kernel-4.14/out/arch/arm64/boot/dtb/*
-          kernel_workspace/android-kernel/kernel-4.14/out/*
-          kernel_workspace/android-kernel/kernel-4.14/out/arch/arm64/boot/*

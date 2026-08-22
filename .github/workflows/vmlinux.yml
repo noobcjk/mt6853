@@ -66,6 +66,7 @@ jobs:
         sed -i 's/# CONFIG_VIRTIO_CONSOLE is not set/CONFIG_VIRTIO_CONSOLE=y/' out/.config
         sed -i 's/# CONFIG_VIRTIO_BLK is not set/CONFIG_VIRTIO_BLK=y/' out/.config
         sed -i 's/# CONFIG_VIRTIO_NET is not set/CONFIG_VIRTIO_NET=y/' out/.config
+        make O=out ARCH=arm64 olddefconfig
         make -j$(nproc --all) CC="ccache clang" O=out ARCH=arm64 CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=aarch64-linux-android- CROSS_COMPILE_ARM32=arm-linux-androideabi- LD=ld.lld vmlinux Image dtbs
 
     # ===== 1. 上传到 Artifacts（工作流页面下载）=====

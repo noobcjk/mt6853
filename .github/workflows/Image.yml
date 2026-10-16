@@ -33,7 +33,7 @@ jobs:
     - name: 下载内核源码
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
-        git clone --depth=1 https://github.com/fangkuaixiaoqiao/android_kernel_oppo_mt6853 -b oppo/mt6853_s_12.1_k7x android-kernel
+        git clone --depth=1 https://github.com/noobcjk/mt6853 -b oppo/mt6853_s_12.1_k7x android-kernel
         cd android-kernel/kernel-4.14
         
     - name: 设置ccache缓存
